@@ -1,0 +1,18 @@
+The change in the robot's orientation (Δθ) is calculated using the difference in the distances 
+traveled by the left and right wheels and the distance between the wheels (the baseline, 2L).
+
+Δθ = (Δs_right - Δs_left) / (2L)
+
+
+Calculate the total distance the robot moved (Δs) by averaging the wheel displacements. 
+Δs = (Δs_left + Δs_right) / 2 
+
+Using trigonometry, the change in the robot's x and y coordinates can be found: 
+Δx = Δs * cos(θ + Δθ/2) 
+Δy = Δs * sin(θ + Δθ/2) 
+
+Update Robot's Pose 
+Add the calculated changes (Δx, Δy, Δθ) to the robot's previous position (x, y) and orientation (θ) to get the new pose (x', y', θ').
+x' = x + Δx
+y' = y + Δy
+θ' = θ + Δθ
