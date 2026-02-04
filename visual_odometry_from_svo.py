@@ -130,7 +130,6 @@ def main(svo_path):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python zed_vo_from_svo_inline.py file.svo")
         sys.exit(1)
 
     main(sys.argv[1])
