@@ -1,3 +1,9 @@
+"""
+This script performs monocular visual odometry (VO) on a ZED camera SVO recording. 
+It estimates the camera’s motion over time by tracking visual features between consecutive frames and reconstructing the camera trajectory.
+The code implements a basic monocular visual odometry pipeline using ZED SVO data and OpenCV, producing an estimated camera trajectory purely from image motion analysis.
+"""
+
 import sys
 import numpy as np
 import cv2
