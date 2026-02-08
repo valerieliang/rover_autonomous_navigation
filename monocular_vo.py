@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import sys
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 
 # ============================
@@ -109,7 +110,8 @@ def monocular_vo(video_path=None,
                  use_fb_check=True,
                  frame_skip=1,
                  plot_interval=10,
-                 redetect_interval=5):
+                 redetect_interval=5,
+                 view_3d=True):
 
     if video_path is None:
         cap = cv2.VideoCapture(0)
@@ -127,6 +129,7 @@ def monocular_vo(video_path=None,
 
     print(f"Resolution: {width}x{height}, FPS: {fps}")
     print(f"Max features: {max_features}, FB check: {use_fb_check}, Frame skip: {frame_skip}")
+    print(f"3D visualization: {view_3d}")
 
     ret, frame = cap.read()
     if not ret:
@@ -162,8 +165,12 @@ def monocular_vo(video_path=None,
     redetect_counter = 0
 
     plt.ion()
-    fig = plt.figure(figsize=(8, 6))
-    ax = fig.add_subplot(111)
+    fig = plt.figure(figsize=(10, 8))
+    
+    if view_3d:
+        ax = fig.add_subplot(111, projection='3d')
+    else:
+        ax = fig.add_subplot(111)
 
     while True:
         for _ in range(frame_skip):
@@ -212,13 +219,44 @@ def monocular_vo(video_path=None,
         if frame_idx % plot_interval == 0 and traj_idx > 1:
             traj = trajectory[:traj_idx]
             ax.clear()
-            ax.plot(traj[:, 0], traj[:, 2], '-b', linewidth=2)
-            ax.scatter(traj[-1, 0], traj[-1, 2], c='r', s=50)
-            ax.set_title(f"Monocular VO Trajectory (Frame {frame_idx})")
-            ax.set_xlabel("x (m)")
-            ax.set_ylabel("z (m)")
-            ax.grid(True, alpha=0.3)
-            ax.axis('equal')
+            
+            if view_3d:
+                ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], '-b', linewidth=2)
+                ax.scatter(traj[-1, 0], traj[-1, 1], traj[-1, 2], c='r', s=50, marker='o')
+                ax.scatter(traj[0, 0], traj[0, 1], traj[0, 2], c='g', s=50, marker='o')
+                
+                ax.set_title(f"3D Monocular VO Trajectory (Frame {frame_idx})")
+                ax.set_xlabel("X (m)")
+                ax.set_ylabel("Y (m)")
+                ax.set_zlabel("Z (m)")
+                ax.grid(True, alpha=0.3)
+                
+                # Set equal aspect ratio for 3D
+                max_range = np.array([
+                    traj[:, 0].max() - traj[:, 0].min(),
+                    traj[:, 1].max() - traj[:, 1].min(),
+                    traj[:, 2].max() - traj[:, 2].min()
+                ]).max() / 2.0
+                
+                mid_x = (traj[:, 0].max() + traj[:, 0].min()) * 0.5
+                mid_y = (traj[:, 1].max() + traj[:, 1].min()) * 0.5
+                mid_z = (traj[:, 2].max() + traj[:, 2].min()) * 0.5
+                
+                ax.set_xlim(mid_x - max_range, mid_x + max_range)
+                ax.set_ylim(mid_y - max_range, mid_y + max_range)
+                ax.set_zlim(mid_z - max_range, mid_z + max_range)
+                
+                # Better viewing angle
+                ax.view_init(elev=20, azim=45)
+            else:
+                ax.plot(traj[:, 0], traj[:, 2], '-b', linewidth=2)
+                ax.scatter(traj[-1, 0], traj[-1, 2], c='r', s=50)
+                ax.set_title(f"Monocular VO Trajectory (Frame {frame_idx})")
+                ax.set_xlabel("X (m)")
+                ax.set_ylabel("Z (m)")
+                ax.grid(True, alpha=0.3)
+                ax.axis('equal')
+            
             plt.pause(0.001)
 
     cap.release()
@@ -229,16 +267,52 @@ def monocular_vo(video_path=None,
     print(f"Saved {len(trajectory)} trajectory points to trajectory_research_vo.txt")
 
     if len(trajectory) > 0:
-        plt.figure(figsize=(10, 8))
-        plt.plot(trajectory[:, 0], trajectory[:, 2], '-b', linewidth=2)
-        plt.scatter(trajectory[0, 0], trajectory[0, 2], c='g', s=100, label='Start')
-        plt.scatter(trajectory[-1, 0], trajectory[-1, 2], c='r', s=100, label='End')
-        plt.title("Final Monocular VO Trajectory")
-        plt.xlabel("x (m)")
-        plt.ylabel("z (m)")
-        plt.legend()
-        plt.grid(True, alpha=0.3)
-        plt.axis('equal')
+        # Create final plot
+        fig = plt.figure(figsize=(12, 10))
+        
+        if view_3d:
+            ax = fig.add_subplot(111, projection='3d')
+            ax.plot(trajectory[:, 0], trajectory[:, 1], trajectory[:, 2], '-b', linewidth=2, label='Path')
+            ax.scatter(trajectory[0, 0], trajectory[0, 1], trajectory[0, 2], 
+                      c='g', s=150, marker='o', label='Start', edgecolors='black', linewidths=2)
+            ax.scatter(trajectory[-1, 0], trajectory[-1, 1], trajectory[-1, 2], 
+                      c='r', s=150, marker='o', label='End', edgecolors='black', linewidths=2)
+            
+            ax.set_title("Final 3D Monocular VO Trajectory", fontsize=14, fontweight='bold')
+            ax.set_xlabel("X (m)", fontsize=12)
+            ax.set_ylabel("Y (m)", fontsize=12)
+            ax.set_zlabel("Z (m)", fontsize=12)
+            ax.legend(fontsize=10)
+            ax.grid(True, alpha=0.3)
+            
+            # Set equal aspect ratio
+            max_range = np.array([
+                trajectory[:, 0].max() - trajectory[:, 0].min(),
+                trajectory[:, 1].max() - trajectory[:, 1].min(),
+                trajectory[:, 2].max() - trajectory[:, 2].min()
+            ]).max() / 2.0
+            
+            mid_x = (trajectory[:, 0].max() + trajectory[:, 0].min()) * 0.5
+            mid_y = (trajectory[:, 1].max() + trajectory[:, 1].min()) * 0.5
+            mid_z = (trajectory[:, 2].max() + trajectory[:, 2].min()) * 0.5
+            
+            ax.set_xlim(mid_x - max_range, mid_x + max_range)
+            ax.set_ylim(mid_y - max_range, mid_y + max_range)
+            ax.set_zlim(mid_z - max_range, mid_z + max_range)
+            
+            ax.view_init(elev=20, azim=45)
+        else:
+            ax = fig.add_subplot(111)
+            ax.plot(trajectory[:, 0], trajectory[:, 2], '-b', linewidth=2)
+            ax.scatter(trajectory[0, 0], trajectory[0, 2], c='g', s=100, label='Start')
+            ax.scatter(trajectory[-1, 0], trajectory[-1, 2], c='r', s=100, label='End')
+            ax.set_title("Final Monocular VO Trajectory")
+            ax.set_xlabel("X (m)")
+            ax.set_ylabel("Z (m)")
+            ax.legend()
+            ax.grid(True, alpha=0.3)
+            ax.axis('equal')
+        
         plt.savefig("trajectory_plot.png", dpi=150, bbox_inches='tight')
         print("Saved trajectory plot to trajectory_plot.png")
         plt.show()
@@ -247,7 +321,7 @@ def monocular_vo(video_path=None,
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description='Optimized Monocular Visual Odometry')
+    parser = argparse.ArgumentParser(description='Optimized Monocular Visual Odometry with 3D Visualization')
     parser.add_argument('video', nargs='?', default=None)
     parser.add_argument('--scale', type=float, default=1.0)
     parser.add_argument('--features', type=int, default=500)
@@ -255,6 +329,7 @@ if __name__ == "__main__":
     parser.add_argument('--no-fb', action='store_true')
     parser.add_argument('--skip', type=int, default=1)
     parser.add_argument('--plot-interval', type=int, default=10)
+    parser.add_argument('--2d', action='store_true', help='Use 2D visualization instead of 3D')
 
     args = parser.parse_args()
 
@@ -265,5 +340,6 @@ if __name__ == "__main__":
         min_features=args.min_features,
         use_fb_check=not args.no_fb,
         frame_skip=args.skip,
-        plot_interval=args.plot_interval
+        plot_interval=args.plot_interval,
+        view_3d=not args.__dict__['2d']
     )
