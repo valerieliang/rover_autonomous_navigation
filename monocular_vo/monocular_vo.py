@@ -111,7 +111,8 @@ def monocular_vo(video_path=None,
                  frame_skip=1,
                  plot_interval=10,
                  redetect_interval=5,
-                 view_3d=True):
+                 view_3d=True,
+                 save_temporal_plots=True):
 
     if video_path is None:
         cap = cv2.VideoCapture(0)
@@ -267,6 +268,100 @@ def monocular_vo(video_path=None,
     print(f"Saved {len(trajectory)} trajectory points to trajectory_research_vo.txt")
 
     if len(trajectory) > 0:
+        # Create temporal plots
+        if save_temporal_plots:
+            fig_temporal = plt.figure(figsize=(15, 10))
+            
+            # Time axis (frame indices)
+            time_axis = np.arange(len(trajectory))
+            
+            # Position over time
+            ax1 = plt.subplot(3, 2, 1)
+            ax1.plot(time_axis, trajectory[:, 0], 'r-', linewidth=1.5, label='X')
+            ax1.plot(time_axis, trajectory[:, 1], 'g-', linewidth=1.5, label='Y')
+            ax1.plot(time_axis, trajectory[:, 2], 'b-', linewidth=1.5, label='Z')
+            ax1.set_xlabel('Frame')
+            ax1.set_ylabel('Position (m)')
+            ax1.set_title('Position Components Over Time')
+            ax1.legend()
+            ax1.grid(True, alpha=0.3)
+            
+            # Velocity (displacement between frames)
+            velocities = np.diff(trajectory, axis=0)
+            vel_time = time_axis[1:]
+            
+            ax2 = plt.subplot(3, 2, 2)
+            ax2.plot(vel_time, velocities[:, 0], 'r-', linewidth=1.5, label='Vx')
+            ax2.plot(vel_time, velocities[:, 1], 'g-', linewidth=1.5, label='Vy')
+            ax2.plot(vel_time, velocities[:, 2], 'b-', linewidth=1.5, label='Vz')
+            ax2.set_xlabel('Frame')
+            ax2.set_ylabel('Velocity (m/frame)')
+            ax2.set_title('Velocity Components Over Time')
+            ax2.legend()
+            ax2.grid(True, alpha=0.3)
+            
+            # Speed (magnitude of velocity)
+            speed = np.linalg.norm(velocities, axis=1)
+            ax3 = plt.subplot(3, 2, 3)
+            ax3.plot(vel_time, speed, 'purple', linewidth=2)
+            ax3.set_xlabel('Frame')
+            ax3.set_ylabel('Speed (m/frame)')
+            ax3.set_title('Speed Over Time')
+            ax3.grid(True, alpha=0.3)
+            ax3.fill_between(vel_time, speed, alpha=0.3, color='purple')
+            
+            # Cumulative distance
+            cumulative_distance = np.zeros(len(trajectory))
+            cumulative_distance[1:] = np.cumsum(speed)
+            ax4 = plt.subplot(3, 2, 4)
+            ax4.plot(time_axis, cumulative_distance, 'orange', linewidth=2)
+            ax4.set_xlabel('Frame')
+            ax4.set_ylabel('Distance (m)')
+            ax4.set_title('Cumulative Distance Traveled')
+            ax4.grid(True, alpha=0.3)
+            ax4.fill_between(time_axis, cumulative_distance, alpha=0.3, color='orange')
+            
+            # Distance from origin
+            distance_from_origin = np.linalg.norm(trajectory, axis=1)
+            ax5 = plt.subplot(3, 2, 5)
+            ax5.plot(time_axis, distance_from_origin, 'teal', linewidth=2)
+            ax5.set_xlabel('Frame')
+            ax5.set_ylabel('Distance (m)')
+            ax5.set_title('Distance from Starting Point')
+            ax5.grid(True, alpha=0.3)
+            ax5.fill_between(time_axis, distance_from_origin, alpha=0.3, color='teal')
+            
+            # Height (Y) over time with emphasis
+            ax6 = plt.subplot(3, 2, 6)
+            ax6.plot(time_axis, trajectory[:, 1], 'green', linewidth=2)
+            ax6.set_xlabel('Frame')
+            ax6.set_ylabel('Height (m)')
+            ax6.set_title('Vertical Position (Y) Over Time')
+            ax6.grid(True, alpha=0.3)
+            ax6.axhline(y=0, color='black', linestyle='--', alpha=0.5)
+            ax6.fill_between(time_axis, trajectory[:, 1], alpha=0.3, color='green')
+            
+            plt.tight_layout()
+            plt.savefig("trajectory_temporal.png", dpi=150, bbox_inches='tight')
+            print("Saved temporal analysis to trajectory_temporal.png")
+            
+            # Print statistics
+            print("\n" + "="*50)
+            print("TRAJECTORY STATISTICS")
+            print("="*50)
+            print(f"Total frames processed: {len(trajectory)}")
+            print(f"Total distance traveled: {cumulative_distance[-1]:.2f} m")
+            print(f"Final distance from origin: {distance_from_origin[-1]:.2f} m")
+            print(f"Average speed: {np.mean(speed):.4f} m/frame")
+            print(f"Max speed: {np.max(speed):.4f} m/frame")
+            print(f"Position range - X: [{trajectory[:, 0].min():.2f}, {trajectory[:, 0].max():.2f}]")
+            print(f"Position range - Y: [{trajectory[:, 1].min():.2f}, {trajectory[:, 1].max():.2f}]")
+            print(f"Position range - Z: [{trajectory[:, 2].min():.2f}, {trajectory[:, 2].max():.2f}]")
+            print(f"Net displacement - X: {trajectory[-1, 0]:.2f} m")
+            print(f"Net displacement - Y: {trajectory[-1, 1]:.2f} m")
+            print(f"Net displacement - Z: {trajectory[-1, 2]:.2f} m")
+            print("="*50 + "\n")
+        
         # Create final plot
         fig = plt.figure(figsize=(12, 10))
         
@@ -330,6 +425,7 @@ if __name__ == "__main__":
     parser.add_argument('--skip', type=int, default=1)
     parser.add_argument('--plot-interval', type=int, default=10)
     parser.add_argument('--2d', action='store_true', help='Use 2D visualization instead of 3D')
+    parser.add_argument('--no-temporal', action='store_true', help='Skip temporal analysis plots')
 
     args = parser.parse_args()
 
@@ -341,5 +437,6 @@ if __name__ == "__main__":
         use_fb_check=not args.no_fb,
         frame_skip=args.skip,
         plot_interval=args.plot_interval,
-        view_3d=not args.__dict__['2d']
+        view_3d=not args.__dict__['2d'],
+        save_temporal_plots=not args.no_temporal
     )
