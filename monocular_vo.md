@@ -28,19 +28,19 @@ python monocular_vo.py video.mp4 --scale 0.5 --no-fb --skip 2
 
 ### Real-Time (60-100 fps)
 ```bash
-python monocular_vo_documented.py video.mp4 \
+python monocular_vo.py video.mp4 \
     --scale 0.5 --no-fb --skip 2 --features 300
 ```
 
 ### Balanced (25-40 fps)
 ```bash
-python monocular_vo_documented.py video.mp4 \
+python monocular_vo.py video.mp4 \
     --scale 0.75 --features 500
 ```
 
 ### High Quality (10-20 fps)
 ```bash
-python monocular_vo_documented.py video.mp4 \
+python monocular_vo.py video.mp4 \
     --scale 1.0 --features 1000 --min-features 400
 ```
 
@@ -48,7 +48,7 @@ python monocular_vo_documented.py video.mp4 \
 
 ### Basic Usage
 ```python
-from monocular_vo_documented import monocular_vo
+from monocular_vo import monocular_vo
 
 monocular_vo(video_path="input.mp4")
 ```
@@ -66,7 +66,7 @@ monocular_vo(
 
 ### Individual Functions
 ```python
-from monocular_vo_documented import (
+from monocular_vo import (
     get_camera_matrix,
     track_features,
     estimate_pose,
@@ -149,21 +149,21 @@ print(f"Total distance: {total_distance:.2f}")
 ### Too Few Features
 ```bash
 # Reduce threshold or increase max
-python monocular_vo_documented.py video.mp4 \
+python monocular_vo.py video.mp4 \
     --min-features 150 --features 800
 ```
 
 ### Erratic Trajectory
 ```bash
 # Enable FB check, reduce skip
-python monocular_vo_documented.py video.mp4 \
+python monocular_vo.py video.mp4 \
     --skip 1  # Remove --no-fb if present
 ```
 
 ### Too Slow
 ```bash
 # Reduce resolution and features
-python monocular_vo_documented.py video.mp4 \
+python monocular_vo.py video.mp4 \
     --scale 0.5 --features 300 --no-fb
 ```
 
@@ -239,18 +239,18 @@ N = log(1-p) / log(1-wᵏ)
 
 ### Robotics Navigation
 ```bash
-python monocular_vo_documented.py /dev/video0 \
+python monocular_vo.py /dev/video0 \
     --scale 0.5 --features 500
 ```
 
 ### Video Analysis
 ```bash
-python monocular_vo_documented.py dataset.mp4 \
+python monocular_vo.py dataset.mp4 \
     --scale 1.0 --features 1000
 ```
 
 ### Real-Time Demo
 ```bash
-python monocular_vo_documented.py \
+python monocular_vo.py \
     --scale 0.5 --no-fb --features 300
 ```
