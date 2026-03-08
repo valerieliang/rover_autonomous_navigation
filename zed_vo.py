@@ -457,7 +457,7 @@ def zed_vo(args: argparse.Namespace):
     depth_map   = sl.Mat()
     pose        = sl.Pose()
     imu_data    = sl.SensorsData()
-    zed_pose    = sl.Transform()
+    #zed_pose    = sl.Transform()
 
     # ── Navigation state ──────────────────────────────────────────────────────
     tracker     = DisplacementTracker(speed_window=args.speed_window)
@@ -508,12 +508,12 @@ def zed_vo(args: argparse.Namespace):
             tracking_state = zed.get_position(pose, sl.REFERENCE_FRAME.WORLD)
 
             if tracking_state == sl.POSITIONAL_TRACKING_STATE.OK:
-                translation = pose.get_translation(zed_pose)
+                translation = pose.get_translation()
                 pos = np.array([translation.get()[0],
                                 translation.get()[1],
                                 translation.get()[2]])
 
-                rotation_q = pose.get_orientation(zed_pose).get()   # [ox, oy, oz, ow]
+                rotation_q = pose.get_orientation().get()   # [ox, oy, oz, ow]
                 ox, oy, oz, ow = rotation_q
                 # Quaternion → rotation matrix
                 R = np.array([
