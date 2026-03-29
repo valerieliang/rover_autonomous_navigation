@@ -19,7 +19,7 @@ zed_vo_core.py        ← VO data structures, tracking, smoothing, plotting
 zed_scene_core.py     ← scene analysis, depth processing, visualization
 ```
 
-All three files must be in the same directory. The two `_core` modules have no ZED SDK calls and can be imported or unit-tested independently.
+All three files must be in the same directory. `zed_vo_core.py` has no ZED SDK calls and can be imported or unit-tested independently. `zed_scene_core.py` imports `pyzed.sl` because it also contains a standalone `run()` entry point for running scene understanding without VO; the analysis functions themselves (`preprocess_depth`, `detect_walls`, etc.) are SDK-free and are what `zed_slam_main.py` calls.
 
 ---
 
@@ -219,7 +219,7 @@ Both pipelines read from the same `depth_raw` numpy array retrieved once per fra
 ### `zed_vo_core.py`
 
 #### `NavState` (dataclass)
-Frozen snapshot of all navigation data for a single frame.
+Mutable snapshot of all navigation data for a single frame. Updated in-place each frame under `nav_lock` in the main loop.
 
 | Field | Type | Description |
 |---|---|---|
@@ -274,8 +274,8 @@ Generates and saves `zed_displacement_analysis.png` and `zed_trajectory_plot.png
 
 ### `zed_scene_core.py`
 
-#### `SceneConfig`
-All tuneable scene analysis parameters. Edit the class attributes directly to adjust behaviour for your environment.
+#### `SceneConfig` / `Config`
+All tuneable scene analysis parameters. The class is defined as `Config` in `zed_scene_core.py`; `SceneConfig` is an alias exported for use by `zed_slam_main.py`. Edit the class attributes directly to adjust behaviour for your environment.
 
 | Parameter | Default | Description |
 |---|---|---|
@@ -381,7 +381,7 @@ Raise `CLUSTER_MIN_PIXELS` to filter out small noise blobs, or lower it to catch
 Try lowering `--ema-alpha` (e.g. `0.5`) for smoother velocity, and raise `--speed-window` for a longer rolling average. On challenging environments, `DEPTH_MODE.ULTRA` (already the default) gives the best pose accuracy.
 
 ### High CPU on Jetson
-Use `--no-plot` to skip matplotlib entirely. Use `--no-display` if a monitor is not available. Lower `--verbose-interval` to reduce print I/O, or raise it to reduce it.
+Use `--no-plot` to skip matplotlib entirely. Use `--no-display` if a monitor is not available. Raise `--verbose-interval` to reduce print I/O (fewer rows printed per second).
 
 ---
 
