@@ -24,6 +24,7 @@ Usage
 """
 
 import argparse
+import math
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -218,7 +219,6 @@ def detect_hallway(depth: np.ndarray, walls: WallInfo, cfg: Config) -> HallwayIn
 
     # Rough width: if we know the camera HFOV (~90° for ZED 2 at HD720)
     # width ≈ 2 * side_dist * tan(FOV/6)  (for one third of frame)
-    import math
     hfov_rad   = math.radians(90)
     width_est  = 2 * side_d * math.tan(hfov_rad / 6) if side_d < float("inf") else 0.0
 
@@ -382,6 +382,21 @@ def draw_overlay(frame: np.ndarray, depth: np.ndarray,
 
     out = np.vstack([out, panel])
     return out
+
+
+# =============================================================================
+# Aliases for zed_slam_main.py compatibility
+# =============================================================================
+
+#: ``SceneConfig`` is the public name expected by ``zed_slam_main.py``.
+#: ``Config`` is kept for backwards compatibility with the standalone script.
+SceneConfig = Config
+
+def draw_scene_overlay(frame: np.ndarray, depth: np.ndarray,
+                       scene: SceneState, clusters: list,
+                       cfg: Config) -> np.ndarray:
+    """Thin wrapper around :func:`draw_overlay` — name used by zed_slam_main."""
+    return draw_overlay(frame, depth, scene, clusters, cfg)
 
 
 # =============================================================================
